@@ -1,4 +1,4 @@
-package sharapatyi.TelegramBot
+package sharapatyi.telegramBot
 
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest

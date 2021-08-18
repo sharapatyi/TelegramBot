@@ -1,4 +1,4 @@
-package sharapatyi.TelegramBot
+package sharapatyi.telegramBot
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication

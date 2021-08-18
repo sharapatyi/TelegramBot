@@ -1,8 +1,11 @@
-package sharapatyi.TelegramBot.repository
+package sharapatyi.telegramBot.repository
 
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
+import java.security.MessageDigest
+import java.util.*
+import javax.xml.bind.DatatypeConverter
 
 @Service
 class PrivatRepo {
@@ -83,10 +86,9 @@ class PrivatRepo {
             .trim())
         if (response == "error message") {
             return PrivatCardDto(
-                elseInfo = "$error"
+                error = "$error"
             )
-        }
-        else return PrivatCardDto(
+        } else return PrivatCardDto(
             cardNumber = resp.lines()
                 .first { it.contains("<card_number") }
                 .replace("<card_number", "")
@@ -108,6 +110,16 @@ class PrivatRepo {
         val cardNumber: String? = null,
         val currency: String? = null,
         val count: String? = null,
-        val elseInfo: String? = null
+        val error: String? = null
     )
+
+    private fun sha1(input: String) = hashString("SHA-1", input)
+    private fun md5(input: String) = hashString("MD5", input)
+
+    private fun hashString(type: String, input: String): String {
+        val bytes = MessageDigest
+            .getInstance(type)
+            .digest(input.toByteArray())
+        return DatatypeConverter.printHexBinary(bytes).uppercase(Locale.getDefault())
+    }
 }
