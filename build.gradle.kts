@@ -24,6 +24,10 @@ dependencies {
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.12.4")
 	implementation("com.squareup.okhttp3:okhttp:4.9.1")
+	implementation("org.springframework:spring-webflux:5.3.9")
+	implementation("org.springframework.boot:spring-boot-starter-webflux:2.5.3")
+
+
 
 
 

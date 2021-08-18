@@ -3,20 +3,21 @@ package sharapatyi.TelegramBot.service
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.dataformat.xml.JacksonXmlModule
 import com.fasterxml.jackson.dataformat.xml.XmlMapper
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
+import org.springframework.web.reactive.function.client.WebClient
 import org.telegram.telegrambots.bots.TelegramLongPollingBot
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.Update
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow
-import sharapatyi.telegramBot.service.*
-import java.io.*
-import java.net.HttpURLConnection
-import java.net.URL
+import sharapatyi.TelegramBot.repository.PrivatRepo
 
 @Service
-class BotService : TelegramLongPollingBot() {
+internal class BotService : TelegramLongPollingBot() {
+
+    @Autowired private lateinit var privatRepo: PrivatRepo
 
     @Value("\${telegram.requestCardNum}")
     private val cardNum = ""
@@ -43,6 +44,7 @@ class BotService : TelegramLongPollingBot() {
      * @param update - объект
      */
     override fun onUpdateReceived(update: Update) {
+
         if (update.hasMessage()) {
             val message = update.message
             val chatId = message.chatId
@@ -55,17 +57,9 @@ class BotService : TelegramLongPollingBot() {
                 "Я понимаю только текст"
             }
             if (message.text == "Мерчант" && update.message.from.id == 436961179) {
-                val url = URL("https://api.privatbank.ua/p24api/balance")
-                val dto = RequestDto(
-                    merchant = MerchantDto(
-                        id = merchantId,
-                        signature = merchantSignature
-                    ),
-                    data = DataDto()
-                )
-                getResponseFromPrivat(url, createXmlForm(dto))
+                val request = privatRepo.loadCardCount()
                 val responseText =
-                    "id = ${dto.merchant.id}; signature = ${dto.merchant.signature}, card number = ${dto.data.payment}"
+                    "RESPONSE = ${request.elseInfo}"
                 sendNotification(chatId, responseText)
             }
             sendNotification(chatId, responseText)
@@ -100,6 +94,7 @@ class BotService : TelegramLongPollingBot() {
         val responseMessage = SendMessage(chatId, responseText)
         responseMessage.setParseMode("Markdown")
         val markup = ReplyKeyboardMarkup()
+        markup.resizeKeyboard = true
         val keyboard: MutableList<KeyboardRow> = ArrayList()
         val row = KeyboardRow()
         row.add("Мерчант")
@@ -110,36 +105,21 @@ class BotService : TelegramLongPollingBot() {
     }
 
     /**
-     * Метод для отправки запроса на api Приватбанка и получение response
+     * Отправка запроса на апи приватбанка и получение респонса
      *
-     * @param url = "https://api.privatbank.ua/p24api/balanc"
-     * @param xml = форма, которую строим в функции createXmlForm
+     * @param xml
+     * @return
      */
-    private fun getResponseFromPrivat(url: URL, xml: String) {
-        val httpConnection: HttpURLConnection = url.openConnection() as HttpURLConnection
-        httpConnection.requestMethod = "POST"
-        httpConnection.setRequestProperty("Content-Type", "application/xml")
-        httpConnection.setRequestProperty("Accept", "application/xml")
-        httpConnection.doOutput = true
-        val outStream: OutputStream = httpConnection.outputStream
-        val outStreamWriter = OutputStreamWriter(outStream, "UTF-8")
-        outStreamWriter.write(xml)
-        outStreamWriter.flush()
-        outStreamWriter.close()
-
-        println(httpConnection.responseCode)
-        println(httpConnection.responseMessage)
-
-        val inputStream: InputStream = httpConnection.inputStream
-        BufferedReader(InputStreamReader(inputStream)).use {
-            val response = StringBuffer()
-            var inputLine = it.readLine()
-            while (inputLine != null) {
-                response.append(inputLine)
-                inputLine = it.readLine()
-            }
-            it.close()
-            println("Response : $response")
-        }
+    private fun getResponseFromPrivat(xml: String): String {
+        val client = WebClient.create()
+        val response: WebClient.ResponseSpec = client.post()
+            .uri("https://api.privatbank.ua/p24api/balance")
+            .header("Accept", "application/xml")
+            .header("Content-Type", "application/xml")
+            .bodyValue(xml)
+            .retrieve()
+        val responseBody = response.bodyToMono(String::class.java).block()
+        println("RESPONSE : $responseBody")
+        return responseBody!!
     }
 }

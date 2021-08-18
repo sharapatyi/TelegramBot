@@ -1,4 +1,4 @@
-package sharapatyi.telegramBot.service
+package sharapatyi.TelegramBot.service
 
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty
@@ -20,12 +20,10 @@ data class DataDto(
 )
 
 data class PaymentDto(
-    @JacksonXmlProperty(isAttribute = true, localName = "")
+    @JacksonXmlProperty(isAttribute = true, localName = "id")
     val id: String = "",
-    val prop: List<PaymentProp> = listOf(
-        PaymentProp(name = "cardnum", value = "11111111"),
-        PaymentProp(name = "country", value = "UA")
-    )
+    @JacksonXmlProperty(localName = "prop")
+    val prop: List<PaymentProp>
 )
 
 data class PaymentProp(
@@ -36,6 +34,6 @@ data class PaymentProp(
 )
 
 data class MerchantDto(
-    val id: Int,
-    val signature: String
+    val id: Int = 123123,
+    val signature: String = "asdasdas"
 )
